@@ -1,0 +1,5 @@
+export APP_PORT=:4000
+export DB_NAME=snippetbox
+export DB_HOST=localhost
+export DB_WEB_USER=web
+export DB_WEB_PASSWORD=password

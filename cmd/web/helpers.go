@@ -26,9 +26,10 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 		td = &templateData{}
 	}
 
-	td.Flash = app.session.PopString(r, flash)
+	td.Flash = app.session.PopString(r, app.flash)
 	td.CurrentYear = time.Now().Year()
 	td.IsAuthenticated = app.isAuthenticated(r)
+
 	return td
 }
 
@@ -63,5 +64,5 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 }
 
 func (app *application) isAuthenticated(r *http.Request) bool {
-	return app.session.Exists(r, authenticatedUserID)
+	return app.session.Exists(r, app.authUserID)
 }

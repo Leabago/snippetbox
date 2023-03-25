@@ -10,11 +10,11 @@ import (
 	"strings"
 )
 
-var flash = "flash"
-var authenticatedUserID = "authenticatedUserID"
-var MaxLength = 100
-var MinLength = 10
-var MaxEmailLength = 254
+// var flash = "flash"
+// var authUserID = "authUserID"
+// var MaxLength = 100
+// var MinLength = 10
+// var MaxEmailLength = 254
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
@@ -73,7 +73,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	form.Values.Set(contentName, strings.TrimSpace(form.Values.Get(contentName)))
 	form.Values.Set(expiresName, strings.TrimSpace(form.Values.Get(expiresName)))
 	form.Required(titleName, contentName, expiresName)
-	form.MaxLength(titleName, MaxLength)
+	form.MaxLength(titleName, app.maxLength)
 	form.PermittedValues(expiresName, "365", "7", "1")
 
 	if !form.Valid() {
@@ -85,7 +85,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	app.session.Put(r, flash, "Snippet successfully created!")
+	app.session.Put(r, app.flash, "Snippet successfully created!")
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
@@ -111,10 +111,10 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	form.Values.Set(nameName, strings.TrimSpace(form.Values.Get(nameName)))
 	form.Values.Set(emailName, strings.TrimSpace(form.Values.Get(emailName)))
 	form.Required(nameName, emailName, passwordName)
-	form.MaxLength(nameName, MaxLength)
-	form.MaxLength(emailName, MaxEmailLength)
+	form.MaxLength(nameName, app.maxLength)
+	form.MaxLength(emailName, app.maxEmailLength)
 	form.MatchesPattern(emailName)
-	form.MinLength(passwordName, MinLength)
+	form.MinLength(passwordName, app.minLength)
 
 	if !form.Valid() {
 		app.render(w, r, "signup.page.tmpl.html", &templateData{Form: form})
@@ -124,7 +124,6 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	err = app.users.Insert(form.Values.Get(nameName), form.Values.Get(emailName), form.Values.Get(passwordName))
 
 	if err != nil {
-
 		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.Errors.Add(emailName, errorEmail)
 			app.render(w, r, "signup.page.tmpl.html", &templateData{Form: form})
@@ -134,7 +133,7 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.session.Put(r, flash, successfulSignup)
+	app.session.Put(r, app.flash, successfulSignup)
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
@@ -167,12 +166,13 @@ func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.session.Put(r, authenticatedUserID, id)
+	app.session.Put(r, app.authUserID, id)
+	fmt.Println(id)
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
 func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
-	app.session.Remove(r, authenticatedUserID)
-	app.session.Put(r, flash, "You've been logged out successfully!")
+	app.session.Remove(r, app.authUserID)
+	app.session.Put(r, app.flash, "You've been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

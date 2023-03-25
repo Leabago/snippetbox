@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snippetbox-deployment
+  labels:
+    app: snippetbox
+spec:
+  selector:
+    matchLabels:
+      app: snippetbox
+  template:
+    metadata:
+      labels:
+        app: snippetbox
+    spec:
+      containers:
+      - name: snippetbox
+        image: snippetbox:local
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 4000
+        env:
+        - name: APP_PORT
+          value: :4000
+        envFrom:                               
+        - secretRef:                          
+            name: mysql-secret

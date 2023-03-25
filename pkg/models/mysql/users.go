@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"snippetbox/pkg/models"
 	"strings"
 
@@ -25,6 +26,9 @@ func (m *UserModel) Insert(name, email, password string) error {
 	VALUES(?, ?, ?, UTC_TIMESTAMP())`
 
 	_, err = m.DB.Exec(stmt, name, email, hashedPassword)
+
+	fmt.Println("stmt:", stmt)
+	fmt.Println("err:", err)
 
 	if err != nil {
 		var mySQLError *mysql.MySQLError

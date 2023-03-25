@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,17 +11,26 @@ import (
 	"text/template"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql" // New import
 	"github.com/golangcollege/sessions"
+
+	_ "github.com/jinzhu/gorm/dialects/mysql"    //mysql database driver
+	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
 )
 
 type application struct {
 	session       *sessions.Session
 	infoLog       *log.Logger
 	errorLog      *log.Logger
+	debugLog      *log.Logger
 	snippets      *mysql.SnippetModel
 	users         *mysql.UserModel
 	templateCache map[string]*template.Template
+
+	flash          string
+	authUserID     string
+	maxLength      int
+	minLength      int
+	maxEmailLength int
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -34,18 +44,32 @@ func openDB(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
-func main() {
+func getEnv(name string, errorLog *log.Logger) string {
+	varEnv := os.Getenv(name)
+	if varEnv == "" {
+		ErrDuplicateEmail := fmt.Errorf("empty environment variable %s", name)
+		errorLog.Fatal(ErrDuplicateEmail)
+	}
+	return varEnv
+}
 
-	addr := flag.String("addr", ":4000", "HTTP network address")
-	dsn := flag.String("dsn", "web:pass123.A@/snippetbox?parseTime=true", "MySQL data source name")
+func main() {
+	fmt.Println("start app")
+	logFormat := log.Ldate | log.Ltime | log.Lshortfile
+	infoLog := log.New(os.Stdout, "INFO\t", logFormat)
+	debugLog := log.New(os.Stdout, "DEBUG\t", logFormat)
+	errorLog := log.New(os.Stderr, "ERROR\t", logFormat)
+
+	APP_PORT := getEnv("APP_PORT", errorLog)
+	DB_NAME := getEnv("DB_NAME", errorLog)
+	DB_HOST := getEnv("DB_HOST", errorLog)
+	DB_WEB_USER := getEnv("DB_WEB_USER", errorLog)
+	DB_WEB_PASSWORD := getEnv("DB_WEB_PASSWORD", errorLog)
+	dsn := fmt.Sprintf("%s:%s@(%s)/%s?parseTime=true", DB_WEB_USER, DB_WEB_PASSWORD, DB_HOST, DB_NAME)
 	secret := flag.String("secret", "s6Ndh+pPbnzHbS*+9Pk8qGWhTzbpa@ge", "Secret key")
 	flag.Parse()
 
-	logFormat := log.Ldate | log.Ltime | log.Lshortfile
-	infoLog := log.New(os.Stdout, "INFO\t", logFormat)
-	errorLog := log.New(os.Stderr, "ERROR\t", logFormat)
-
-	db, err := openDB(*dsn)
+	db, err := openDB(dsn)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
@@ -62,14 +86,21 @@ func main() {
 	app := &application{
 		session:       session,
 		infoLog:       infoLog,
+		debugLog:      debugLog,
 		errorLog:      errorLog,
 		snippets:      &mysql.SnippetModel{DB: db},
 		users:         &mysql.UserModel{DB: db},
 		templateCache: templateCache,
+
+		flash:          "flash",
+		authUserID:     "authUserID",
+		maxLength:      100,
+		minLength:      10,
+		maxEmailLength: 254,
 	}
 
 	srv := &http.Server{
-		Addr:     *addr,
+		Addr:     APP_PORT,
 		ErrorLog: errorLog,
 		Handler:  app.routes(),
 
@@ -78,8 +109,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	infoLog.Printf("Starting server on %s", *addr)
-
+	infoLog.Printf("Starting server on %s", APP_PORT)
 	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
 }

@@ -26,11 +26,11 @@ type application struct {
 	users         *mysql.UserModel
 	templateCache map[string]*template.Template
 
-	flash          string
-	authUserID     string
-	maxLength      int
-	minLength      int
-	maxEmailLength int
+	flash               *string
+	authenticatedUserID *string
+	maxLength           *int
+	minLength           *int
+	maxEmailLength      *int
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -83,6 +83,12 @@ func main() {
 	session := sessions.New([]byte(*secret))
 	session.Lifetime = 12 * time.Hour
 
+	flash := "flash"
+	authenticatedUserID := "authenticatedUserID"
+	maxLength := 100
+	minLength := 10
+	maxEmailLength := 254
+
 	app := &application{
 		session:       session,
 		infoLog:       infoLog,
@@ -92,11 +98,11 @@ func main() {
 		users:         &mysql.UserModel{DB: db},
 		templateCache: templateCache,
 
-		flash:          "flash",
-		authUserID:     "authUserID",
-		maxLength:      100,
-		minLength:      10,
-		maxEmailLength: 254,
+		flash:               &flash,
+		authenticatedUserID: &authenticatedUserID,
+		maxLength:           &maxLength,
+		minLength:           &minLength,
+		maxEmailLength:      &maxEmailLength,
 	}
 
 	srv := &http.Server{

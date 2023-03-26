@@ -17,6 +17,10 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
 )
 
+type contextKey string
+
+const contextKeyIsAuthenticated = contextKey("isAuthenticated")
+
 type application struct {
 	session       *sessions.Session
 	infoLog       *log.Logger
@@ -26,11 +30,11 @@ type application struct {
 	users         *mysql.UserModel
 	templateCache map[string]*template.Template
 
-	flash               *string
-	authenticatedUserID *string
-	maxLength           *int
-	minLength           *int
-	maxEmailLength      *int
+	authenticatedUserID string
+	flash               string
+	maxLength           int
+	minLength           int
+	maxEmailLength      int
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -82,12 +86,8 @@ func main() {
 
 	session := sessions.New([]byte(*secret))
 	session.Lifetime = 12 * time.Hour
-
-	flash := "flash"
-	authenticatedUserID := "authenticatedUserID"
-	maxLength := 100
-	minLength := 10
-	maxEmailLength := 254
+	session.Secure = true
+	session.SameSite = http.SameSiteStrictMode
 
 	app := &application{
 		session:       session,
@@ -98,11 +98,11 @@ func main() {
 		users:         &mysql.UserModel{DB: db},
 		templateCache: templateCache,
 
-		flash:               &flash,
-		authenticatedUserID: &authenticatedUserID,
-		maxLength:           &maxLength,
-		minLength:           &minLength,
-		maxEmailLength:      &maxEmailLength,
+		authenticatedUserID: "authenticatedUserID",
+		flash:               "flash",
+		maxLength:           100,
+		minLength:           10,
+		maxEmailLength:      254,
 	}
 
 	srv := &http.Server{

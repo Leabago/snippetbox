@@ -2,6 +2,7 @@
 {{define "title"}}Signup{{end}}
 {{define "main"}}
 <form action="/user/login" method="post">
+    <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
     {{with .Form}}
     <div>
         {{with .Errors.Get "generic"}}

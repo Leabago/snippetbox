@@ -67,7 +67,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	form.Values.Set(contentName, strings.TrimSpace(form.Values.Get(contentName)))
 	form.Values.Set(expiresName, strings.TrimSpace(form.Values.Get(expiresName)))
 	form.Required(titleName, contentName, expiresName)
-	form.MaxLength(titleName, *app.maxLength)
+	form.MaxLength(titleName, app.maxLength)
 	form.PermittedValues(expiresName, "365", "7", "1")
 
 	if !form.Valid() {
@@ -79,7 +79,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	app.session.Put(r, *app.flash, "Snippet successfully created!")
+	app.session.Put(r, app.flash, "Snippet successfully created!")
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
@@ -105,10 +105,10 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	form.Values.Set(nameName, strings.TrimSpace(form.Values.Get(nameName)))
 	form.Values.Set(emailName, strings.TrimSpace(form.Values.Get(emailName)))
 	form.Required(nameName, emailName, passwordName)
-	form.MaxLength(nameName, *app.maxLength)
-	form.MaxLength(emailName, *app.maxEmailLength)
+	form.MaxLength(nameName, app.maxLength)
+	form.MaxLength(emailName, app.maxEmailLength)
 	form.MatchesPattern(emailName)
-	form.MinLength(passwordName, *app.minLength)
+	form.MinLength(passwordName, app.minLength)
 
 	if !form.Valid() {
 		app.render(w, r, "signup.page.tmpl.html", &templateData{Form: form})
@@ -127,7 +127,7 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.session.Put(r, *app.flash, successfulSignup)
+	app.session.Put(r, app.flash, successfulSignup)
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
@@ -160,13 +160,13 @@ func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.session.Put(r, *app.authenticatedUserID, id)
+	app.session.Put(r, app.authenticatedUserID, id)
 	fmt.Println(id)
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
 
 func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
-	app.session.Remove(r, *app.authenticatedUserID)
-	app.session.Put(r, *app.flash, "You've been logged out successfully!")
+	app.session.Remove(r, app.authenticatedUserID)
+	app.session.Put(r, app.flash, "You've been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

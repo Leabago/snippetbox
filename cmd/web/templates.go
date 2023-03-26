@@ -9,6 +9,7 @@ import (
 )
 
 type templateData struct {
+	CSRFToken       string
 	IsAuthenticated bool
 	Flash           string
 	Form            *forms.Form

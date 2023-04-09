@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"snippetbox/pkg/models"
 	"snippetbox/pkg/models/mysql"
 	"text/template"
 	"time"
@@ -22,12 +23,22 @@ type contextKey string
 const contextKeyIsAuthenticated = contextKey("isAuthenticated")
 
 type application struct {
-	session       *sessions.Session
-	infoLog       *log.Logger
-	errorLog      *log.Logger
-	debugLog      *log.Logger
-	snippets      *mysql.SnippetModel
-	users         *mysql.UserModel
+	session  *sessions.Session
+	infoLog  *log.Logger
+	errorLog *log.Logger
+	debugLog *log.Logger
+
+	snippets interface {
+		Insert(string, string, string) (int, error)
+		Get(int) (*models.Snippet, error)
+		Latest() ([]*models.Snippet, error)
+	}
+	users interface {
+		Insert(string, string, string) error
+		Authenticate(string, string) (int, error)
+		Get(id int) (*models.User, error)
+	}
+
 	templateCache map[string]*template.Template
 
 	authenticatedUserID string

@@ -38,6 +38,7 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		} else {
 			app.serverError(w, err)
 		}
+		return
 	}
 
 	app.render(w, r, "show.page.tmpl.html", &templateData{
@@ -105,7 +106,6 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	form.Values.Set(nameName, strings.TrimSpace(form.Values.Get(nameName)))
 	form.Values.Set(emailName, strings.TrimSpace(form.Values.Get(emailName)))
 	form.Required(nameName, emailName, passwordName)
-	form.MaxLength(nameName, app.maxLength)
 	form.MaxLength(emailName, app.maxEmailLength)
 	form.MatchesPattern(emailName)
 	form.MinLength(passwordName, app.minLength)
@@ -169,4 +169,8 @@ func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	app.session.Remove(r, app.authenticatedUserID)
 	app.session.Put(r, app.flash, "You've been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Ok"))
 }

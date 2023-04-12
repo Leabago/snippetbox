@@ -7,7 +7,7 @@ import (
 )
 
 // func TestDB(t *testing.T) (*sql.DB, func()) {
-func TestDB(t *testing.T) {
+func newTestDB(t *testing.T) (*sql.DB, func()) {
 	// Establish a sql.DB connection pool for our test database. Because our
 	// setup and teardown scripts contains multiple SQL statements, we need
 	// to use the `multiStatements=true` parameter in our DSN. This instructs
@@ -32,14 +32,15 @@ func TestDB(t *testing.T) {
 	// completed.
 	// return db, func() {
 
-	script, err = ioutil.ReadFile("./testdata/teardown.sql")
-	if err != nil {
-		t.Fatal(err)
+	return db, func() {
+		script, err := ioutil.ReadFile("./testdata/teardown.sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.Exec(string(script))
+		if err != nil {
+			t.Fatal(err)
+		}
+		db.Close()
 	}
-	_, err = db.Exec(string(script))
-	if err != nil {
-		t.Fatal(err)
-	}
-	db.Close()
-	// }
 }
